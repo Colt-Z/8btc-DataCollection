@@ -1,0 +1,5 @@
+CREATE TABLE Market_btce(PTime  VARCHAR(20),PHigh VARCHAR(20),PLow VARCHAR(20),PLast VARCHAR(20),primary KEY (PTime));
+CREATE TABLE Market_bitstamp(PTime  VARCHAR(20),PHigh VARCHAR(20),PLow VARCHAR(20),PLast VARCHAR(20),primary KEY (PTime));
+CREATE TABLE Market_okcoin(PTime  VARCHAR(20),PHigh VARCHAR(20),PLow VARCHAR(20),PLast VARCHAR(20),primary KEY (PTime));
+CREATE TABLE Market_huobi(PTime  VARCHAR(20),PHigh VARCHAR(20),PLow VARCHAR(20),PLast VARCHAR(20),primary KEY (PTime));
+CREATE TABLE Market_btcchina(PTime  VARCHAR(20),PHigh VARCHAR(20),PLow VARCHAR(20),PLast VARCHAR(20),primary KEY (PTime));
