@@ -58,12 +58,29 @@ def MyMarketVal(input):
 def IRData():
     try:  
         Stackbtce.append(MyMarketVal(btce))
+    except:
+        pass
+    
+    try:
         Stackbitstamp.append(MyMarketVal(bitstamp))
+    except:
+        pass
+    
+    try:    
         Stackokcoin.append(MyMarketVal(okcoin))
+    except:
+        pass
+    
+    try:
         Stackbtcchina.append(MyMarketVal(btcchina))
+    except:
+        pass
+    
+    try:
         Stackhuobi.append(MyMarketVal(huobi))
     except:
         pass
+    
     return
 
 #singal table push

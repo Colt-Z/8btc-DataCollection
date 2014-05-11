@@ -1,0 +1,3 @@
+CREATE TABLE Tx(txHash  VARCHAR(64),txHigh int(20),detailKey VARCHAR(20),primary KEY (txHash, txHigh));
+CREATE TABLE Txin(detailKey VARCHAR(20),n int(20),address VARCHAR(64), fromTx VARCHAR(64),primary KEY (detailKey, n));
+CREATE TABLE Txout(detailKey VARCHAR(20),n int(20),address VARCHAR(64),bvalue VARCHAR(40),primary KEY (detailKey, n));
