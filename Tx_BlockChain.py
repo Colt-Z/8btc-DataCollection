@@ -46,8 +46,8 @@ def GetShorterVout(input):
     return input
 
 #decode the tx, then push the detail in a dict form
-def GetTXdetail(connection, data, height):
-    tx = connection.decoderawtransaction(data)  
+def GetTXdetail(connection, hash, height):
+    tx = connection.getrawtransaction(hash, 1)  
     vinlist = []
     voutlist = []
 
@@ -64,16 +64,14 @@ def GetTXdetail(connection, data, height):
 #main function for program, get the blocktemp from bitcoind, then check wheather this hash already
 #existed, if yes then do nothing, else push it into memory database.
 def TXListen(connection):
-    blocktemp = connection.getblocktemplate()
-    transactions = blocktemp["transactions"]
-    height = blocktemp["height"]
+    transactions = connection.getrawmempool()
+    height = connection.getblockcount() + 1
     CheckDBNoReduence(height)
 
     for transaction in transactions:
-        hash = transaction["hash"]
-        if not(hash in DBNoReduence):
-            MemoryData[hash] = GetTXdetail(connection, transaction["data"], height)
-            DBNoReduence.append(hash)
+        if not(transaction in DBNoReduence):
+            MemoryData[transaction] = GetTXdetail(connection, transaction, height)
+            DBNoReduence.append(transaction)
     return
 
 #called after push memory to database, clen the memory
