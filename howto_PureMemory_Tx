@@ -1,0 +1,10 @@
+缩减版的tx信息存在MemoryData里，是字典格式。      
+hashkey:[value, time]            value是输出值， 时间是unix格式
+
+
+
+
+
+如果需要完全信息call function：GetJsonTx(hash)                   
+hash就是txid，如果存在这个tx在未确认的tx里则返回json格式的参数， 如不存在则返回{error：can't find this transaction in unconfirmed transaction}
+
