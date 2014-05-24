@@ -40,6 +40,7 @@ def GetVoutDetail(input):
 
 
 def GetJsonTx(hash):
+        
     result = {}
     input = []
     output = []
@@ -47,24 +48,29 @@ def GetJsonTx(hash):
     global outval
     inval = 0
     outval = 0
-    tx = connection.getrawtransaction(hash, 1)
-  
-    for vin in tx["vin"]:
-        input.append(GetSenderDetail(vin["txid"], vin["vout"], vin["scriptSig"]["asm"]))
         
-    for vout in tx["vout"]:
-        output.append(GetVoutDetail(vout))
+    try:
+        tx = connection.getrawtransaction(hash, 1)
+  
+        for vin in tx["vin"]:
+            input.append(GetSenderDetail(vin["txid"], vin["vout"], vin["scriptSig"]["asm"]))
+        
+        for vout in tx["vout"]:
+            output.append(GetVoutDetail(vout))
     
     
-    result["block_height"] = -1
-    result["fee"] = inval - outval
-    result["hash"] = hash
-    result["inputs"] = input
-    result["outputs"] = output
-    result["size"] = len(tx["hex"])
+        result["block_height"] = -1
+        result["fee"] = inval - outval
+        result["hash"] = hash
+        result["inputs"] = input
+        result["outputs"] = output
+        result["size"] = len(tx["hex"])/2
     #result["tx_time"] = 
-    result["total_input"] = inval
-    result["total_output"] = outval
+        result["total_input"] = inval
+        result["total_output"] = outval
+    except:
+        print("error on: " + hash)
+        result["error"] = "can't find this transaction"
     
     return result
 
@@ -100,8 +106,6 @@ def TXListen():
     for transaction in transactions:
         if not(transaction in MemoryData):
             MemoryData[transaction] = GetTXdetail(transaction)
-            print(transaction)
-            print(MemoryData[transaction])
     return
     
 
@@ -118,4 +122,3 @@ def run():
 
 
 #run()
-
