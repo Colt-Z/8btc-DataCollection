@@ -96,6 +96,7 @@ def GetTXdetail(hash):
     return [OutValue, time.time()]
 
 
+
 #main function for program, get the blocktemp from bitcoind, then check wheather this hash already
 #existed, if yes then do nothing, else push it into memory database.
 def TXListen():
