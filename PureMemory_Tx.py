@@ -65,7 +65,7 @@ def GetJsonTx(hash):
         result["inputs"] = input
         result["outputs"] = output
         result["size"] = len(tx["hex"])/2
-        result["tx_time"] = 
+        result["tx_time"] = time.time()
         result["total_input"] = inval
         result["total_output"] = outval
     except:
