@@ -1,6 +1,7 @@
-import json
 import time
 from authproxy import AuthServiceProxy, JSONRPCException
+from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+import traceback
 
 #para for connect to the bitcoind
 BCAccount = "root"
@@ -10,10 +11,13 @@ host='127.0.0.1'
 connection = AuthServiceProxy("http://" + BCAccount + ":" + BCpassword + "@" + host + ":8332/")
 looptime = 5
 CurrentBlock = 0
-MemoryData = {}
+ShortTxInfo = {}
+FullTxInfo = {}
+AddressRefference = {}
 #variable for json return
 inval = 0
 outval = 0
+
 
 
 
@@ -23,7 +27,7 @@ def GetSenderDetail(hash, index, script):
     tx = connection.getrawtransaction(hash, 1)["vout"][index]
     inval += tx["value"]
     result["addr"] = tx["scriptPubKey"]["addresses"][0]
-    result["amount"] = tx["value"]
+    result["amount"] = str(tx["value"])
     result["prev_output"] = hash
     result["script"] = script
     return result
@@ -33,14 +37,20 @@ def GetVoutDetail(input):
     result = {}
     outval += input["value"]
     result["addr"] = input["scriptPubKey"]["addresses"][0]
-    result["amount"] = input["value"]
+    result["amount"] = str(input["value"])
     result["redeemed_input"] = "Not yet redeemed"
     result["script"] = input["scriptPubKey"]["asm"]
     return result
 
+def SetAddressRefference(address, hash):
+    if not(address in AddressRefference.keys()):
+        AddressRefference[address] = [hash]      
+    if not(hash in AddressRefference[address]):
+        AddressRefference[address].append(hash)   
+    return
 
-def GetJsonTx(hash):
-        
+
+def GetJsonTx(hash):      
     result = {}
     input = []
     output = []
@@ -51,14 +61,16 @@ def GetJsonTx(hash):
         
     try:
         tx = connection.getrawtransaction(hash, 1)
-  
         for vin in tx["vin"]:
-            input.append(GetSenderDetail(vin["txid"], vin["vout"], vin["scriptSig"]["asm"]))
-        
+            index = GetSenderDetail(vin["txid"], vin["vout"], vin["scriptSig"]["asm"])
+            input.append(index)
+            SetAddressRefference(index["addr"], hash)
+
         for vout in tx["vout"]:
-            output.append(GetVoutDetail(vout))
-    
-    
+            index = GetVoutDetail(vout)
+            output.append(index)
+            SetAddressRefference(index["addr"], hash)
+        
         result["block_height"] = -1
         result["fee"] = inval - outval
         result["hash"] = hash
@@ -66,23 +78,46 @@ def GetJsonTx(hash):
         result["outputs"] = output
         result["size"] = len(tx["hex"])/2
         result["tx_time"] = time.time()
-        result["total_input"] = inval
+        result["total_input"] = str(inval)
         result["total_output"] = outval
     except:
         print("error on: " + hash)
+        traceback.print_exc()
         result["error"] = "can't find this transaction"
     
     return result
+
+def DeletedAddressPointer(inputs, tx):
+    for input in inputs:
+        addr = input["addr"]
+        if (addr in AddressRefference.keys() and tx in AddressRefference[addr]):
+            AddressRefference[addr].remove(tx)
+            if (len(AddressRefference[addr]) == 0):
+                del AddressRefference[addr]
+    return
+
+
+def DeletedConforedTx():
+    hash = connection.getblockhash(CurrentBlock)
+    txs = connection. getblock(hash)["tx"]
+    
+    for tx in txs:
+        if (tx in ShortTxInfo):
+            del ShortTxInfo[tx]
+            DeletedAddressPointer(FullTxInfo[tx]["inputs"], tx)
+            DeletedAddressPointer(FullTxInfo[tx]["outputs"], tx)
+            del FullTxInfo[tx]
+    return
 
 
 #check for set up the DBNoReduence list
 def CheckDBNoReduence(height):
     global CurrentBlock
     global dataindex
-    global MemoryData
+    global ShortTxInfo
     if CurrentBlock < height:
         CurrentBlock = height  
-        MemoryData ={}  
+        DeletedConforedTx()
     return
 
 
@@ -101,25 +136,41 @@ def GetTXdetail(hash):
 #existed, if yes then do nothing, else push it into memory database.
 def TXListen():
     transactions = connection.getrawmempool()
-    height = connection.getblockcount() + 1
+    height = connection.getblockcount() 
     CheckDBNoReduence(height)
 
     for transaction in transactions:
-        if not(transaction in MemoryData):
-            MemoryData[transaction] = GetTXdetail(transaction)
+        if not(transaction in ShortTxInfo):
+            ShortTxInfo[transaction] = GetTXdetail(transaction)
+            FullTxInfo[transaction] = GetJsonTx(transaction)
     return
     
 
 #call it to run 
-def run():
+def watcher():
     while True:
         try:
             TXListen()
         except JSONRPCException:
-            pass
-    
+            pass   
         time.sleep(looptime)
     return
 
 
-run()
+
+
+class EchoApplication(WebSocketApplication):
+    def on_open(self):
+        print ("Connection opened")
+
+    def on_message(self, message):
+        self.ws.send(message)
+
+    def on_close(self, reason):
+        print (reason)
+
+WebSocketServer(('', 8000),Resource({'/': EchoApplication})).serve_forever()
+
+
+
+
